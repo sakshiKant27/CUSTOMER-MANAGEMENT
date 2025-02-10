@@ -1,0 +1,58 @@
+package com.companyname.customer.services;
+
+import org.apache.ofbiz.service.DispatchContext;
+import org.apache.ofbiz.service.ServiceUtil;
+import org.apache.ofbiz.entity.GenericEntityException;
+import org.apache.ofbiz.entity.GenericValue;
+import org.apache.ofbiz.entity.util.EntityQuery;
+import org.apache.ofbiz.base.util.UtilMisc;
+
+import java.util.List;
+import java.util.Map;
+
+public class CustomerServices {
+
+    public static Map<String, Object> findCustomer(DispatchContext dctx, Map<String, Object> context) {
+        try {
+            // Extract the search parameters from the context
+            String emailAddress = (String) context.get("emailAddress");
+            String firstName = (String) context.get("firstName");
+            String lastName = (String) context.get("lastName");
+            String contactNumber = (String) context.get("contactNumber");
+            String postalAddress = (String) context.get("postalAddress");
+
+
+            EntityQuery query = EntityQuery.use(dctx.getEntityFacade())
+                    .from("Party")
+                    .join("PartyContactMech", "PCM")
+                    .join("ContactMech", "CM")
+                    .join("Person", "PS");
+
+            // Add conditions based on the provided parameters (case-insensitive, partial match)
+            if (emailAddress != null && !emailAddress.isEmpty()) {
+                query = query.where("CM.infoString", "like", "%" + emailAddress + "%");
+            }
+            if (firstName != null && !firstName.isEmpty()) {
+                query = query.where("PS.firstName", "like", "%" + firstName + "%");
+            }
+            if (lastName != null && !lastName.isEmpty()) {
+                query = query.where("PS.lastName", "like", "%" + lastName + "%");
+            }
+            if (contactNumber != null && !contactNumber.isEmpty()) {
+                query = query.where("CM.infoString", "like", "%" + contactNumber + "%");
+            }
+            if (postalAddress != null && !postalAddress.isEmpty()) {
+                query = query.where("CM.infoString", "like", "%" + postalAddress + "%");
+            }
+
+            // Execute the query and get the list of matching customers (parties)
+            List<GenericValue> customers = query.queryList();
+
+            // Return success with the list of matching customers
+            return ServiceUtil.returnSuccess("Customer search completed.", UtilMisc.toMap("customers", customers));
+        } catch (GenericEntityException e) {
+            // Handle errors and return failure
+            return ServiceUtil.returnError("Error during customer search: " + e.getMessage());
+        }
+    }
+}
