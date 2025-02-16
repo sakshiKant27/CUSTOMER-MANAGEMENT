@@ -29,7 +29,7 @@ under the License.
             Dummy service to prevent empty files and syntax error - Remove when the 1st real service will be added here 
         </description>
     </service>
-    <service name="findCustomer" engine="groovy" location="component://CustomerManagement/groovyScripts/CustomerServices.groovy"  auth="true">
+    <service name="findDynamicCustomer" engine="groovy" location="component://CustomerManagement/groovyScripts/CustomerServices.groovy"  default-entity-name="FindCustomerView" auth="true">
         <description>Find customers based on search criteria such as email, first name, last name, contact number, and postal address</description>
 <!--        <auto-attributes include="pk" mode="OUT" optional="false"/>-->
 <!--        <auto-attributes include="nonpk" mode="IN" optional="true"/>-->
@@ -39,6 +39,36 @@ under the License.
         <attribute name="postalCode" type="short-varchar" mode="IN"/>
         <attribute name="customerList" type="List" mode="OUT"/>
     </service>
+
+    <service name="createCustomer"
+             engine="groovy"
+             location="component://CustomerManagement/groovyScripts/createDynamicCustomer.groovy"
+             invoke="createCustomer">
+        <description>Create a new customer if not exists</description>
+        <attribute name="infoString" type="String" mode="IN" />
+        <attribute name="firstName" type="String" mode="IN" />
+        <attribute name="lastName" type="String" mode="IN" />
+        <attribute name="partyId" type="String" mode="OUT" />
+    </service>
+
+
+    <service name="updateDynamicCustomer" engine="groovy" default-entity-name="FindCustomerView"
+             location="component://CustomerManagement/groovyScripts/updateDynamicCustomer.groovy"
+             invoke="UpdateCustomerDetail"
+             auth="true">
+        <attribute name="infoString" type="String" mode="IN" optional="true" />
+        <attribute name="firstName" type="String" mode="IN" optional="true" />
+        <attribute name="lastName" type="String" mode="IN" optional="true" />
+        <attribute name="contactNumber" type="String" mode="IN" optional="true" />
+        <attribute name="toName" type="String" mode="IN" optional="true" />
+        <attribute name="attnName" type="String" mode="IN" optional="true" />
+        <attribute name="address" type="String" mode="IN" optional="true" />
+        <attribute name="city" type="String" mode="IN" optional="true" />
+        <attribute name="postalCode" type="String" mode="IN" optional="true" />
+
+        <attribute name="customerlist" type="List" mode="OUT" optional="true" />
+    </service>
+
 
 
 </services>

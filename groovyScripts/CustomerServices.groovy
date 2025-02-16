@@ -1,56 +1,98 @@
-import org.apache.ofbiz.entity.EntityCondition
-import org.apache.ofbiz.entity.EntityFind
-import org.apache.ofbiz.context.ExecutionContext
-import org.apache.ofbiz.entity.GenericValue
-import org.apache.ofbiz.entity.EntityList
-import org.apache.ofbiz.service.ServiceUtil
+import org.apache.ofbiz.entity.Delegator
+import org.apache.ofbiz.entity.DelegatorFactory
+import org.apache.ofbiz.entity.GenericEntityException
+import org.apache.ofbiz.entity.util.EntityQuery
+import org.apache.ofbiz.entity.condition.EntityCondition
+import org.apache.ofbiz.entity.condition.EntityOperator
+import org.apache.ofbiz.base.util.Debug
 
-def findCustomer(DispatchContext dctx, Map<String, ? extends Object> context) {
-    // Extracting the filters from the context map
-    String emailAddress = context.emailAddress
-    String firstName = context.firstName
-    String lastName = context.lastName
-    String contactNumber = context.contactNumber
-    String postalAddress = context.postalAddress
 
-    // Prepare a list to hold the matching partyIds
-    List<String> partyIdList = []
+def FindCustomerDetail() {
+    Debug.logInfo("Fetching Customer list...", "CustomerService")
 
-    // Get the ExecutionContext and create an EntityFind object
-    ExecutionContext ec = dctx.getExecutionContext()
-    EntityFind ef = ec.entity.find("org.apache.ofbiz.customer.FindCustomerView")
-
-    // Apply conditions based on the input filters (case-insensitive, partial match)
-    if (firstName) {
-        ef.condition('firstName', EntityCondition.LIKE, "%" + firstName + "%")
-    }
-    if (lastName) {
-        ef.condition('lastName', EntityCondition.LIKE, "%" + lastName + "%")
-    }
-    if (contactNumber) {
-        ef.condition('contactNumber', EntityCondition.LIKE, "%" + contactNumber + "%")
-    }
-    if (postalAddress) {
-        ef.condition('postalAddress', EntityCondition.LIKE, "%" + postalAddress + "%")
-    }
-    if (emailAddress) {
-        ef.condition('infoString', EntityCondition.LIKE, "%" + emailAddress + "%")
+    if (context == null) {
+        context = [:]
     }
 
-    // Sort by firstName and lastName
-    ef.orderBy("firstName, lastName")
+    Delegator delegator = (Delegator) context.get("delegator") ?: DelegatorFactory.getDelegator("default")
 
-    // Execute the query
-    EntityList el = ef.list()
+    String partyId = context.get("partyId")
+    String infoString = context.get("infoString")
+    String combinedName = context.get("combinedName")
+    String firstName = context.get("firstName")
+    String lastName = context.get("lastName")
+    String contactNumber = context.get("contactNumber")
+    String toName = context.get("toName")
+    String attnName = context.get("attnName")
+    String address = context.get("address")
+    String city = context.get("city")
+    String postalCode = context.get("postalCode")
 
-    // Collect the partyIds of the matched customers
-    el.each { GenericValue ev ->
-        partyIdList.add(ev.partyId)
+    List customerlist = []
+    List<EntityCondition> conditions = []
+
+    try {
+        if (partyId) {
+            conditions.add(EntityCondition.makeCondition("partyId", EntityOperator.EQUALS, partyId))
+        }
+
+        if (infoString) {
+            conditions.add(EntityCondition.makeCondition("infoString", EntityOperator.LIKE, "%" + infoString + "%"))
+        }
+
+        if (combinedName) {
+            conditions.add(EntityCondition.makeCondition("combinedName", EntityOperator.LIKE, "%" + combinedName + "%"))
+        }
+
+        if (firstName) {
+            conditions.add(EntityCondition.makeCondition("firstName", EntityOperator.LIKE, "%" + firstName + "%"))
+        }
+
+        if (lastName) {
+            conditions.add(EntityCondition.makeCondition("lastName", EntityOperator.LIKE, "%" + lastName + "%"))
+        }
+
+        if (contactNumber) {
+            conditions.add(EntityCondition.makeCondition("contactNumber", EntityOperator.LIKE, "%" + contactNumber + "%"))
+        }
+
+        if (toName) {
+            conditions.add(EntityCondition.makeCondition("toName", EntityOperator.LIKE, "%" + toName + "%"))
+        }
+
+        if (attnName) {
+            conditions.add(EntityCondition.makeCondition("attnName", EntityOperator.LIKE, "%" + attnName + "%"))
+        }
+
+        if (address) {
+            conditions.add(EntityCondition.makeCondition("address", EntityOperator.LIKE, "%" + address + "%"))
+        }
+
+        if (city) {
+            conditions.add(EntityCondition.makeCondition("city", EntityOperator.LIKE, "%" + city + "%"))
+        }
+
+        if (postalCode) {
+            conditions.add(EntityCondition.makeCondition("postalCode", EntityOperator.LIKE, "%" + postalCode + "%"))
+        }
+
+        def query = EntityQuery.use(delegator).from("FindCustomerView")
+
+        if (!conditions.isEmpty()) {
+            query = query.where(EntityCondition.makeCondition(conditions, EntityOperator.AND))
+        }
+
+        customerlist = query.queryList()
+    }
+    catch (GenericEntityException e) {
+        Debug.logError("Error in FindCustomerDetail service: " + e, "CustomerService")
     }
 
-    // Prepare the result to return
-    Map<String, Object> result = ServiceUtil.returnSuccess()
-    result.put("partyIdList", partyIdList)
+    Debug.logInfo("Customer List Before Setting in Context: " + customerlist, "CustomerService")
 
-    return result
+    context.customerlist = customerlist ?: []
+
+    Debug.logInfo("Customer List After Setting in Context: " + context.customerlist, "CustomerService")
+
+    return context;
 }
