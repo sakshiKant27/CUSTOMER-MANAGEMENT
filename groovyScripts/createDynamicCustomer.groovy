@@ -41,7 +41,7 @@ def createCustomer() {
         person.set("lastName", lastName)
         person.create()
 
-        
+
         def partyRole = delegator.makeValue("PartyRole")
         partyRole.set("partyId", party.partyId)
         partyRole.set("roleTypeId", "CUSTOMER")
